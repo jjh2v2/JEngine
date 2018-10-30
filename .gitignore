@@ -11,3 +11,4 @@
 *.log
 *.opendb
 .vs/
+.Debug/
