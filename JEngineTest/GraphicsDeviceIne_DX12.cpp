@@ -84,6 +84,4 @@ void GraphicsDeviceIne_DX12::Init()
 			}
 		}
 	}
-
-
 }
