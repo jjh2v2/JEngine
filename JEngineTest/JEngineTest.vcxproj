@@ -70,8 +70,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
-    <IntDir>$(SolutionDir)$(Configuration)\</IntDir>
+    <OutDir>bin\</OutDir>
+    <IntDir>obj\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -124,18 +124,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="EngineLoop.cpp" />
+    <ClCompile Include="DXDevice.cpp" />
+    <ClCompile Include="EngineMain.cpp" />
     <ClCompile Include="GraphicsDeviceIne_DX12.cpp" />
     <ClCompile Include="Main.cpp" />
+    <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="TestDX.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="EngineLoop.h" />
+    <ClInclude Include="d3dx12.h" />
+    <ClInclude Include="DXDevice.h" />
+    <ClInclude Include="EngineMain.h" />
     <ClInclude Include="GraphicsDeviceIne_DX12.h" />
+    <ClInclude Include="Mesh.h" />
     <ClInclude Include="stdafx.h" />
+    <ClInclude Include="TestDX.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -32,11 +32,13 @@
 #include <dxgi1_4.h>
 #include <DirectXMath.h>
 #include <d3dcompiler.h>
+#include "d3dx12.h"
 
 
 #pragma comment(lib,"d3d12.lib")
 #pragma comment(lib,"Dxgi.lib")
 #pragma comment(lib,"dxguid.lib")
+#pragma comment(lib,"d3dcompiler.lib")
 
 // Input includes
 #include <Xinput.h>
@@ -47,6 +49,8 @@
 #pragma comment(lib,"xaudio2.lib")
 
 namespace MS = Microsoft::WRL;
+using namespace DirectX;
+using Microsoft::WRL::ComPtr;
 
 inline void ThrowIfFailed(HRESULT hr)
 {
@@ -66,4 +70,45 @@ enum Devices
 enum RenderProperties
 {
 	NumRenderTargets = 3
+};
+
+enum DEVICE_VENDOR_ID
+{
+	eNONE = 0,
+	eNVIDIA,
+	eINTEL,
+	eAMD,
+	eWARP
+};
+
+typedef struct WindowProperties
+{
+	UINT width;
+	UINT height;
+	float aspectRatio;
+	HWND hwnd;
+} WindowProperties;
+
+extern WindowProperties gWndProp;
+
+struct Vertex
+{
+	Vertex() {}
+	Vertex(float x, float y, float z, float u, float v) : pos(x, y, z), uv(u, v) {}
+	XMFLOAT3 pos;
+	XMFLOAT2 uv;
+	XMFLOAT3 normal;
+	XMFLOAT3 tangent;
+	XMFLOAT4 color;
+};
+
+struct VertexInstanceData
+{
+	XMFLOAT3 position;
+};
+
+struct ScreenQuadVertex
+{
+	DirectX::XMFLOAT4 position;
+	DirectX::XMFLOAT2 uv;
 };

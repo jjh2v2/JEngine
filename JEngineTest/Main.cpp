@@ -1,13 +1,13 @@
 #include "stdafx.h"
-#include "EngineLoop.h"
+#include "EngineMain.h"
 
-EngineLoop gEngineLoop;
+EngineMain gEngineMain;
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow)
 {
-	gEngineLoop.Init(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
-	gEngineLoop.InitPlatformWindows();
-	gEngineLoop.InitModules();
+	gEngineMain.Init(hInstance, hPrevInstance, lpCmdLine, nCmdShow);
+	gEngineMain.InitPlatformWindows(1024, 820);
+	gEngineMain.InitModules();
 
 	// Variables for FPS
 	DWORD dwFrames = 0;
@@ -44,6 +44,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 				break;
 		}
 
+		gEngineMain.OnUpdate();
+		gEngineMain.OnRender();
 		//gRenderObj->OnUpdate();
 		//gRenderObj->OnRender();
 

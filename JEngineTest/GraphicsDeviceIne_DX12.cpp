@@ -52,6 +52,12 @@ void GraphicsDeviceIne_DX12::Init()
 		{
 			DXGI_ADAPTER_DESC AdapterDesc;
 			pAdapters->GetDesc(&AdapterDesc);
+			bool bIsAMD = AdapterDesc.VendorId == 0x1002;
+			bool bIsIntel = AdapterDesc.VendorId == 0x8086;
+			bool bIsNVIDIA = AdapterDesc.VendorId == 0x10DE;
+			bool bIsWARP = AdapterDesc.VendorId == 0x1414;
+			if (bIsWARP) continue;
+
 			D3D_FEATURE_LEVEL MaxSupportedFeatureLevel = static_cast<D3D_FEATURE_LEVEL>(0);
 			UINT NumNodes = 0;
 			const D3D_FEATURE_LEVEL FeatureLevels[] =
@@ -63,7 +69,11 @@ void GraphicsDeviceIne_DX12::Init()
 				D3D_FEATURE_LEVEL_11_0
 			};
 			ID3D12Device* pDevice = nullptr;
+
+			//장치가 사용하는 최소 기능 단계입니다
+			//만약 D3D_FEATURE_LEVEL_11_0을 전달할 경우 11.0부터 12.1까지 지원하는 가장 높은 단계의 기능을 사용합니다
 			D3D_FEATURE_LEVEL MinFeatureLevel = D3D_FEATURE_LEVEL_11_0;
+			
 			HRESULT HR = D3D12CreateDevice(*(&pAdapters), MinFeatureLevel, IID_PPV_ARGS(&pDevice));
 			if (HR == S_OK)
 			{
@@ -77,11 +87,22 @@ void GraphicsDeviceIne_DX12::Init()
 					MaxFeatureLevel = FeatureLevelCaps.MaxSupportedFeatureLevel;
 				}
 
-				D3D_FEATURE_LEVEL OutMaxFeatureLevel = MaxFeatureLevel;
 				UINT OutNumDeviceNodes = pDevice->GetNodeCount();
-
 				pDevice->Release();
+
+				D3D_FEATURE_LEVEL OutMaxFeatureLevel = MinFeatureLevel;
+				DXDevice* dsf = new DXDevice(*(&pAdapters), OutMaxFeatureLevel);
+				devices.push_back(dsf);
+				int i = 0;
 			}
 		}
 	}
+
+	// Describe descriptor heaps - RTV and CBV/SRV/UAV
+
+	// Describe and create the swap chain.
+
+	// Create descriptor heaps.
+
+	// Create frame resources.
 }
