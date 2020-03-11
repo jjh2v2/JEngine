@@ -1,0 +1,14 @@
+*.db
+*.suo
+*.tlog
+*.pch
+*.obj
+*.pdb
+*.idb
+*.ilk
+*.exe
+*.lastbuildstate
+*.log
+*.opendb
+.vs/
+.Debug/

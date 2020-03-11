@@ -1,0 +1,368 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="소스 파일">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="헤더 파일">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="리소스 파일">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="SourceFiles">
+      <UniqueIdentifier>{d2de339b-b262-4bf0-9779-976fd0a2a98f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\Common">
+      <UniqueIdentifier>{0227c623-0a75-431a-9785-5183134d0aac}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\Core">
+      <UniqueIdentifier>{9aaac9f2-104e-4c14-9d56-1b2cb7027001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\Shader">
+      <UniqueIdentifier>{4e5d8357-390f-4135-bf31-d78b9191bc72}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\Core\Camera">
+      <UniqueIdentifier>{bb77ebe1-c763-497e-8c66-640e66a58b3b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\Core\Input">
+      <UniqueIdentifier>{2ca1305e-62d1-493f-a734-db4a25d026c8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\Core\Threading">
+      <UniqueIdentifier>{fdd08913-7f98-4fc6-9056-c24dd4e1f647}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\Render">
+      <UniqueIdentifier>{f8476cc0-6e29-4990-bf57-d3e5f0258e9c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\Render\Mesh">
+      <UniqueIdentifier>{a8c8118c-92c8-4302-9650-ab7089d1b237}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\Render\Vertex">
+      <UniqueIdentifier>{b6bfc149-552f-4dc1-b938-5566fd72abf2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\Render\Buffer">
+      <UniqueIdentifier>{8c3b50e1-c745-41cf-80dd-f72a976f9ae4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\Core\Misc">
+      <UniqueIdentifier>{274d68cc-e70b-4b74-9202-e82530b5e022}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\Render\DirectX">
+      <UniqueIdentifier>{62479c39-49e2-4533-b07f-7510eca66e87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\DirectXTK12">
+      <UniqueIdentifier>{6cc5ac9a-91ec-4e25-9937-e8d6b13f7cdf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\DirectXTK12\Shaders">
+      <UniqueIdentifier>{8263b60a-bdc0-4aed-a8ae-4cfb4d9bbaf2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\DirectXTK12\Shaders\Compiled">
+      <UniqueIdentifier>{47a8c96c-5d83-4f7a-aa36-18a9c8f522b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="SourceFiles\HlslParser">
+      <UniqueIdentifier>{ed33a147-9f65-49ac-9b84-1322e8032b96}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Main.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GraphicsDeviceIne_DX12.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="EngineMain.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="DXDevice.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="TestDX.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Mesh.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="timerclass.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="JInput.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="JFrameResource.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Common\Camera.cpp">
+      <Filter>SourceFiles\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Common\FrameResource.cpp">
+      <Filter>SourceFiles\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Common\GameTimer.cpp">
+      <Filter>SourceFiles\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Common\GeometryGenerator.cpp">
+      <Filter>SourceFiles\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Common\MathHelper.cpp">
+      <Filter>SourceFiles\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Core\Threading\ThreadPoolManager.cpp">
+      <Filter>SourceFiles\Core\Threading</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Core\Threading\ThreadPool.cpp">
+      <Filter>SourceFiles\Core\Threading</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Core\Threading\Job.cpp">
+      <Filter>SourceFiles\Core\Threading</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Render\Mesh\Mesh.cpp">
+      <Filter>SourceFiles\Render\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Render\Mesh\MeshManager.cpp">
+      <Filter>SourceFiles\Render\Mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Render\Buffer\GPUResource.cpp">
+      <Filter>SourceFiles\Render\Buffer</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Render\DXAssets.cpp">
+      <Filter>SourceFiles\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Render\DXAssetsManager.cpp">
+      <Filter>SourceFiles\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Render\DXAssetsRootSignature.cpp">
+      <Filter>SourceFiles\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Render\DXAssetsShader.cpp">
+      <Filter>SourceFiles\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Render\DXPipelineManager.cpp">
+      <Filter>SourceFiles\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Render\DXAssetsPipelineState.cpp">
+      <Filter>SourceFiles\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Render\DXAssetsConstantBuffer.cpp">
+      <Filter>SourceFiles\Render</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\DirectXTK12\WICTextureLoader.cpp">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\DirectXTK12\DirectXHelpers.cpp">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\DirectXTK12\GraphicsMemory.cpp">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\DirectXTK12\pch.cpp">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\DirectXTK12\LinearAllocator.cpp">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\DirectXTK12\ResourceUploadBatch.cpp">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\DirectXTK12\DDSTextureLoader.cpp">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\Common\d3dUtil.cpp">
+      <Filter>SourceFiles\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="TestDX001.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\HlslParser\HLSLTokenizer.cpp">
+      <Filter>SourceFiles\HlslParser</Filter>
+    </ClCompile>
+    <ClCompile Include="SourceFiles\HlslParser\HLSLParser.cpp">
+      <Filter>SourceFiles\HlslParser</Filter>
+    </ClCompile>
+    <ClCompile Include="TestDX002.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="stdafx.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="TestDX.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="timerclass.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Common\Camera.h">
+      <Filter>SourceFiles\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Common\d3dx12.h">
+      <Filter>SourceFiles\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Common\FrameResource.h">
+      <Filter>SourceFiles\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Common\GameTimer.h">
+      <Filter>SourceFiles\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Common\GeometryGenerator.h">
+      <Filter>SourceFiles\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Common\MathHelper.h">
+      <Filter>SourceFiles\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Common\UploadBuffer.h">
+      <Filter>SourceFiles\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Core\Threading\ThreadPool.h">
+      <Filter>SourceFiles\Core\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Core\Threading\ThreadPoolManager.h">
+      <Filter>SourceFiles\Core\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Core\Threading\Job.h">
+      <Filter>SourceFiles\Core\Threading</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Render\Vertex\MeshVertex.h">
+      <Filter>SourceFiles\Render\Vertex</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Render\Mesh\Mesh.h">
+      <Filter>SourceFiles\Render\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Render\Mesh\MeshManager.h">
+      <Filter>SourceFiles\Render\Mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Render\Buffer\GPUResource.h">
+      <Filter>SourceFiles\Render\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Core\Misc\Axis.h">
+      <Filter>SourceFiles\Core\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Core\Misc\Box.h">
+      <Filter>SourceFiles\Core\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Core\Misc\Color.h">
+      <Filter>SourceFiles\Core\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Core\Misc\Ray.h">
+      <Filter>SourceFiles\Core\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Core\Misc\Rect.h">
+      <Filter>SourceFiles\Core\Misc</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Render\DXAssets.h">
+      <Filter>SourceFiles\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Render\DXAssetsManager.h">
+      <Filter>SourceFiles\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Render\DXAssetsRootSignature.h">
+      <Filter>SourceFiles\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Render\DXAssetsShader.h">
+      <Filter>SourceFiles\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Render\DXPipelineManager.h">
+      <Filter>SourceFiles\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Render\DXAssetsPipelineState.h">
+      <Filter>SourceFiles\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Render\DXAssetsConstantBuffer.h">
+      <Filter>SourceFiles\Render</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Render\Buffer\ConstantBuffer.h">
+      <Filter>SourceFiles\Render\Buffer</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\DirectXTK12\WICTextureLoader.h">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\DirectXTK12\DirectXHelpers.h">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\DirectXTK12\GraphicsMemory.h">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\DirectXTK12\pch.h">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\DirectXTK12\PlatformHelpers.h">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\DirectXTK12\LinearAllocator.h">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\DirectXTK12\LoaderHelpers.h">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\DirectXTK12\ResourceUploadBatch.h">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\DirectXTK12\DDS.h">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\DirectXTK12\DDSTextureLoader.h">
+      <Filter>SourceFiles\DirectXTK12</Filter>
+    </ClInclude>
+    <ClInclude Include="d3dx12.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="DXDevice.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="EngineMain.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Mesh.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="JInput.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="JFrameResource.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="GraphicsDeviceIne_DX12.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\Common\d3dUtil.h">
+      <Filter>SourceFiles\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="TestDX001.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\HlslParser\HLSLTokenizer.h">
+      <Filter>SourceFiles\HlslParser</Filter>
+    </ClInclude>
+    <ClInclude Include="SourceFiles\HlslParser\HLSLParser.h">
+      <Filter>SourceFiles\HlslParser</Filter>
+    </ClInclude>
+    <ClInclude Include="TestDX002.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="SourceFiles\Shader\shaders.hlsl">
+      <Filter>SourceFiles\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="SourceFiles\Shader\shaders_0.hlsl">
+      <Filter>SourceFiles\Shader</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+    <None Include="SourceFiles\DirectXTK12\Shaders\Compiled\GenerateMips_main.inc">
+      <Filter>SourceFiles\DirectXTK12\Shaders\Compiled</Filter>
+    </None>
+  </ItemGroup>
+</Project>
