@@ -137,11 +137,16 @@ public:
 	ComPtr<ID3D12PipelineState>				mpPipelineState;
 
 public:
-	DescriptorHeapObject					mCBVDescriptorHeapObject;
-	ComPtr<ID3D12DescriptorHeap>			mpDsvHeap;
-	ComPtr<ID3D12DescriptorHeap>			mpSampleHeap;
-	//ComPtr<ID3D12DescriptorHeap>			mpCBVHeap;
 	ComPtr<ID3D12Resource>					mpConstantBuffer;
+
+	DescriptorHeapObject					mCBVDescriptorHeap;
+	//ComPtr<ID3D12DescriptorHeap>			mpCBVHeap;
+
+	DescriptorHeapObject					mSampleDescriptorHeap;
+	//ComPtr<ID3D12DescriptorHeap>			mpSampleHeap;
+
+	DescriptorHeapObject					mDsvDescriptorHeap;
+	//ComPtr<ID3D12DescriptorHeap>			mpDsvHeap;
 
 public:
 	ComPtr<IDXGIFactory4>					mpFactory;

@@ -414,7 +414,7 @@ void EngineMain::InitModules()
 		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		ThrowIfFailed(mpDevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&mpCBVHeap)));*/
-		mCBVDescriptorHeapObject.Create(mpDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, NumDescriptors, true);
+		mCBVDescriptorHeap.Create(mpDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, NumDescriptors, true);
 	}
 
 
@@ -441,10 +441,10 @@ void EngineMain::InitModules()
 		for (int i = 0; i < mObj.size(); ++i)
 		{
 			descBuffer.BufferLocation = mpConstantBuffer->GetGPUVirtualAddress() + i * mElementByteSize;
-			D3D12_CPU_DESCRIPTOR_HANDLE handle = mCBVDescriptorHeapObject.Append();
+			D3D12_CPU_DESCRIPTOR_HANDLE handle = mCBVDescriptorHeap.Append();
 			mpDevice->CreateConstantBufferView(&descBuffer, handle);
 
-			D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mCBVDescriptorHeapObject.GetCurrentGPU();
+			D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mCBVDescriptorHeap.GetCurrentGPU();
 			mObj[i]->mGPUHANDLE.ptr = gpuhandle.ptr;
 		}
 
@@ -471,8 +471,8 @@ void EngineMain::InitModules()
 		uploadResourcesFinished.wait();
 
 		// 텍스쳐 재 생성
-		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeapObject.Append();
-		D3D12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor = mCBVDescriptorHeapObject.GetCurrentGPU();
+		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeap.Append();
+		D3D12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor = mCBVDescriptorHeap.GetCurrentGPU();
 		mTextures["bricks"]->mGPUHANDLE.ptr = hGpuDescriptor.ptr;
 		//hDescriptor.Offset()
 		auto woodCrateTexss = mTextures["bricks"]->Resource;
@@ -506,8 +506,8 @@ void EngineMain::InitModules()
 		uploadResourcesFinished.wait();
 
 		// 텍스쳐 재 생성
-		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeapObject.Append();
-		D3D12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor = mCBVDescriptorHeapObject.GetCurrentGPU();
+		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeap.Append();
+		D3D12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor = mCBVDescriptorHeap.GetCurrentGPU();
 		mTextures["skymap0"]->mGPUHANDLE.ptr = hGpuDescriptor.ptr;
 		auto woodCrateTexss = mTextures["skymap0"]->Resource;
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -524,11 +524,7 @@ void EngineMain::InitModules()
 	{
 		// 샘플러 전용 디스크립트 힙을 따로 만들어서 SetDescriptorHeaps할때 CBV_SRV_UAV힙 SAMPLER힙 두개 넘기면 된다
 		// SetGraphicsRootDescriptorTable()할때는 디스크립트테이블 설정한 인덱스 사용하면 된다
-		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER;
-		desc.Flags = true ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-		desc.NumDescriptors = 2;
-		ThrowIfFailed(mpDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mpSampleHeap)));
+		mSampleDescriptorHeap.Create(mpDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER, 2, true);
 
 		D3D12_SAMPLER_DESC sampler = {};
 		sampler.Filter = D3D12_FILTER_ANISOTROPIC;
@@ -538,9 +534,8 @@ void EngineMain::InitModules()
 		sampler.MaxAnisotropy = 2;
 		sampler.MinLOD = -1.0f;
 		sampler.MaxLOD = 1.0f;
-		D3D12_CPU_DESCRIPTOR_HANDLE mSampler(mpSampleHeap->GetCPUDescriptorHandleForHeapStart());
+		D3D12_CPU_DESCRIPTOR_HANDLE mSampler = mSampleDescriptorHeap.Append();
 		UINT HandleIncrementSize = mpDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
-		mSampler.ptr += static_cast<size_t>(0 * HandleIncrementSize);
 		mpDevice->CreateSampler(&sampler, mSampler);
 
 		mSampler.ptr += static_cast<size_t>(1 * HandleIncrementSize);
@@ -549,11 +544,7 @@ void EngineMain::InitModules()
 
 	//Create DSV 
 	{
-		D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-		desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
-		desc.Flags = false ? D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE : D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-		desc.NumDescriptors = 1;
-		ThrowIfFailed(mpDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&mpDsvHeap)));
+		mDsvDescriptorHeap.Create(mpDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_DSV, 1, false);
 
 		CD3DX12_HEAP_PROPERTIES heapProperty(D3D12_HEAP_TYPE_DEFAULT);
 
@@ -583,13 +574,13 @@ void EngineMain::InitModules()
 			IID_PPV_ARGS(mDsTexture.GetAddressOf())
 		));
 		D3D12_DEPTH_STENCIL_VIEW_DESC depthdesc;
-		ZeroMemory(&desc, sizeof(desc));
+		ZeroMemory(&depthdesc, sizeof(depthdesc));
 		depthdesc.Texture2D.MipSlice = 0;
 		depthdesc.Format = resourceDesc.Format;
 		depthdesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 		depthdesc.Flags = D3D12_DSV_FLAG_NONE;
 
-		mpDevice->CreateDepthStencilView(mDsTexture.Get(), &depthdesc, mpDsvHeap->GetCPUDescriptorHandleForHeapStart());
+		mpDevice->CreateDepthStencilView(mDsTexture.Get(), &depthdesc, mDsvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart());
 
 		// Pre CommandList ResourceBarrier
 		{
@@ -602,7 +593,7 @@ void EngineMain::InitModules()
 		}
 
 		//쉐이더로 보넬 텍스쳐로 만드는법?
-		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeapObject.Append();
+		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeap.Append();
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC descSRV;
 		ZeroMemory(&descSRV, sizeof(descSRV));
@@ -707,7 +698,7 @@ void EngineMain::AddBuffe()
 		size_t iAddress = mObj.size();
 		// BufferLocation는 상수버퍼(지역) 안에서만의 위치같다
 		descBuffer.BufferLocation = mpConstantBuffer->GetGPUVirtualAddress() + iAddress * mElementByteSize;
-		D3D12_CPU_DESCRIPTOR_HANDLE handle = mCBVDescriptorHeapObject.Append();
+		D3D12_CPU_DESCRIPTOR_HANDLE handle = mCBVDescriptorHeap.Append();
 		// 상수버퍼 2개를 초기에 먼저 만들고나서 텍스쳐를 만들었다
 		// 키다운을 하면 상수버퍼를 하나 추가 하는데 인덱스 2에 이미 텍스쳐가 있어서 (iAddress+1)해야한다
 		mpDevice->CreateConstantBufferView(&descBuffer, handle);
@@ -719,7 +710,7 @@ void EngineMain::AddBuffe()
 
 	// 택스쳐가 하나 4번인덱스에 있어서 마지막에 iLastIndex + 1을 한번더 해준다
 	size_t iLastIndex = (mObj.size() - 1);
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mCBVDescriptorHeapObject.GetCurrentGPU();
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mCBVDescriptorHeap.GetCurrentGPU();
 	mObj[iLastIndex]->mGPUHANDLE.ptr = gpuhandle.ptr;
 }
 
@@ -771,7 +762,7 @@ void EngineMain::OnRender()
 		pCommandList->RSSetScissorRects(1, &mScissorRect);
 
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mpRtvHeap->GetCPUDescriptorHandleForHeapStart(), miCurrentmiBackBufferIndex, miRtvDescriptorSize);
-		pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &mpDsvHeap->GetCPUDescriptorHandleForHeapStart());
+		pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &mDsvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart());
 
 		{// 리소스 설정, 파이프라인상태 설정
 			/*
@@ -782,14 +773,14 @@ void EngineMain::OnRender()
 			*/
 			pCommandList->SetGraphicsRootSignature(mpRootSignature.Get());
 			// 디스크립트힙은 같은유형은 여러개 안된다 D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV가 같은 타입 복수 안됨
-			ID3D12DescriptorHeap* ppHeaps[] = { mCBVDescriptorHeapObject.pDH.Get(), mpSampleHeap.Get() };
+			ID3D12DescriptorHeap* ppHeaps[] = { mCBVDescriptorHeap.pDH.Get(), mSampleDescriptorHeap.pDH.Get() };
 			pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 			for (int i = threadIndex; i < mObj.size(); i += iNumberOfProcessors)
 			{
 				pCommandList->SetGraphicsRootDescriptorTable(0, mObj[i]->mGPUHANDLE);
 				pCommandList->SetGraphicsRootDescriptorTable(1, mTextures["bricks"]->mGPUHANDLE);
 
-				D3D12_GPU_DESCRIPTOR_HANDLE mSampler(mpSampleHeap->GetGPUDescriptorHandleForHeapStart());
+				D3D12_GPU_DESCRIPTOR_HANDLE mSampler = mSampleDescriptorHeap.GetCurrentGPU(0);;
 				UINT mSmapleDescriptorSize = mpDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 				mSampler.ptr += 0 * mSmapleDescriptorSize;
 				pCommandList->SetGraphicsRootDescriptorTable(2, mSampler);
@@ -850,11 +841,11 @@ void EngineMain::OnRender()
 
 		pPreCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mvRenderTargets[miCurrentmiBackBufferIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mpRtvHeap->GetCPUDescriptorHandleForHeapStart(), miCurrentmiBackBufferIndex, miRtvDescriptorSize);
-		pPreCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &mpDsvHeap->GetCPUDescriptorHandleForHeapStart());
+		pPreCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &mDsvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart());
 		// Record commands.
 		const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
 		pPreCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-		pPreCommandList->ClearDepthStencilView(mpDsvHeap->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0xff, 0, nullptr);
+		pPreCommandList->ClearDepthStencilView(mDsvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart(), D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0xff, 0, nullptr);
 		ThrowIfFailed(pPreCommandList->Close());
 	}
 	

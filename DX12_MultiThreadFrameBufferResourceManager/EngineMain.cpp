@@ -414,7 +414,7 @@ void EngineMain::InitModules()
 		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 		ThrowIfFailed(mpDevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&mpCBVHeap)));*/
-		mCBVDescriptorHeapObject.Create(mpDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, NumDescriptors, true);
+		mCBVDescriptorHeap.Create(mpDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, NumDescriptors, true);
 	}
 
 
@@ -441,10 +441,10 @@ void EngineMain::InitModules()
 		for (int i = 0; i < mObj.size(); ++i)
 		{
 			descBuffer.BufferLocation = mpConstantBuffer->GetGPUVirtualAddress() + i * mElementByteSize;
-			D3D12_CPU_DESCRIPTOR_HANDLE handle = mCBVDescriptorHeapObject.Append();
+			D3D12_CPU_DESCRIPTOR_HANDLE handle = mCBVDescriptorHeap.Append();
 			mpDevice->CreateConstantBufferView(&descBuffer, handle);
 
-			D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mCBVDescriptorHeapObject.GetCurrentGPU();
+			D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mCBVDescriptorHeap.GetCurrentGPU();
 			mObj[i]->mGPUHANDLE.ptr = gpuhandle.ptr;
 		}
 
@@ -471,8 +471,8 @@ void EngineMain::InitModules()
 		uploadResourcesFinished.wait();
 
 		// 텍스쳐 재 생성
-		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeapObject.Append();
-		D3D12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor = mCBVDescriptorHeapObject.GetCurrentGPU();
+		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeap.Append();
+		D3D12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor = mCBVDescriptorHeap.GetCurrentGPU();
 		mTextures["bricks"]->mGPUHANDLE.ptr = hGpuDescriptor.ptr;
 		//hDescriptor.Offset()
 		auto woodCrateTexss = mTextures["bricks"]->Resource;
@@ -506,8 +506,8 @@ void EngineMain::InitModules()
 		uploadResourcesFinished.wait();
 
 		// 텍스쳐 재 생성
-		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeapObject.Append();
-		D3D12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor = mCBVDescriptorHeapObject.GetCurrentGPU();
+		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeap.Append();
+		D3D12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor = mCBVDescriptorHeap.GetCurrentGPU();
 		mTextures["skymap0"]->mGPUHANDLE.ptr = hGpuDescriptor.ptr;
 		auto woodCrateTexss = mTextures["skymap0"]->Resource;
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -602,7 +602,7 @@ void EngineMain::InitModules()
 		}
 
 		//쉐이더로 보넬 텍스쳐로 만드는법?
-		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeapObject.Append();
+		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeap.Append();
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC descSRV;
 		ZeroMemory(&descSRV, sizeof(descSRV));
@@ -707,7 +707,7 @@ void EngineMain::AddBuffe()
 		size_t iAddress = mObj.size();
 		// BufferLocation는 상수버퍼(지역) 안에서만의 위치같다
 		descBuffer.BufferLocation = mpConstantBuffer->GetGPUVirtualAddress() + iAddress * mElementByteSize;
-		D3D12_CPU_DESCRIPTOR_HANDLE handle = mCBVDescriptorHeapObject.Append();
+		D3D12_CPU_DESCRIPTOR_HANDLE handle = mCBVDescriptorHeap.Append();
 		// 상수버퍼 2개를 초기에 먼저 만들고나서 텍스쳐를 만들었다
 		// 키다운을 하면 상수버퍼를 하나 추가 하는데 인덱스 2에 이미 텍스쳐가 있어서 (iAddress+1)해야한다
 		mpDevice->CreateConstantBufferView(&descBuffer, handle);
@@ -719,7 +719,7 @@ void EngineMain::AddBuffe()
 
 	// 택스쳐가 하나 4번인덱스에 있어서 마지막에 iLastIndex + 1을 한번더 해준다
 	size_t iLastIndex = (mObj.size() - 1);
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mCBVDescriptorHeapObject.GetCurrentGPU();
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mCBVDescriptorHeap.GetCurrentGPU();
 	mObj[iLastIndex]->mGPUHANDLE.ptr = gpuhandle.ptr;
 }
 
@@ -783,7 +783,7 @@ void EngineMain::OnRender()
 			*/
 			pCommandList->SetGraphicsRootSignature(mpRootSignature.Get());
 			// 디스크립트힙은 같은유형은 여러개 안된다 D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV가 같은 타입 복수 안됨
-			ID3D12DescriptorHeap* ppHeaps[] = { mCBVDescriptorHeapObject.pDH.Get(), mpSampleHeap.Get() };
+			ID3D12DescriptorHeap* ppHeaps[] = { mCBVDescriptorHeap.pDH.Get(), mpSampleHeap.Get() };
 			pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 			for (int i = threadIndex; i < mObj.size(); i += iNumberOfProcessors)
 			{

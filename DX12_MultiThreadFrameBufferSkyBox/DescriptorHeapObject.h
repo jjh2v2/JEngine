@@ -81,6 +81,12 @@ public:
 		return hGPU(iIndex);
 	}
 
+	D3D12_GPU_DESCRIPTOR_HANDLE GetCurrentGPU(UINT iIndex)
+	{
+		iIndex = iIndex < 0 ? 0 : iIndex;
+		return hGPU(iIndex);
+	}
+
 	UINT GetCurrentIndex() { return mCurrentSize; };
 
 	// Invalidates contents of any previous handles
