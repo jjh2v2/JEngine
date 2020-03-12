@@ -105,6 +105,22 @@ public:
 class EngineMain
 {
 public:
+	~EngineMain()
+	{
+		mpConstantBuffer->Unmap(0, nullptr);
+		mpConstantBuffer->Release();
+		mpConstantBuffer.Detach();
+		mDsTexture->Release();
+		mDsTexture.Detach();
+
+		for (int iIndex = 0; iIndex < mvRenderTargets.size(); iIndex++)
+		{
+			mvRenderTargets[iIndex]->Release();
+			mvRenderTargets[iIndex].Detach();
+		}
+	}
+
+public:
 	HINSTANCE hInstance;
 	HINSTANCE hPrevInstance;
 	LPSTR lpCmdLin;
