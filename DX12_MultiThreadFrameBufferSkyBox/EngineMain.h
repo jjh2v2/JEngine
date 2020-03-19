@@ -7,6 +7,7 @@
 #include "timerclass.h"
 #include "DirectXTK12/ResourceUploadBatch.h"
 #include "DescriptorHeapObject.h"
+#include "RenderPassResource.h"
 
 const UINT		iSwapChainBufferCount = 3;
 const UINT		iFrameCount = 3;
@@ -110,8 +111,8 @@ public:
 		mpConstantBuffer->Unmap(0, nullptr);
 		mpConstantBuffer->Release();
 		mpConstantBuffer.Detach();
-		mDsTexture->Release();
-		mDsTexture.Detach();
+		mDsvTexture->Release();
+		mDsvTexture.Detach();
 
 		for (int iIndex = 0; iIndex < mvRenderTargets.size(); iIndex++)
 		{
@@ -148,9 +149,10 @@ public:
 	void WaitForPreviousFrame();
 
 public:
-	ComPtr<ID3DBlob>						mpVertexShader;
-	ComPtr<ID3DBlob>						mpPixelShader;
-	ComPtr<ID3D12PipelineState>				mpPipelineState;
+	//ComPtr<ID3DBlob>						mpVertexShader;
+	//ComPtr<ID3DBlob>						mpPixelShader;
+	//ComPtr<ID3D12PipelineState>				mpPipelineState;
+	//ComPtr<ID3D12RootSignature>				mpRootSignature;
 
 public:
 	ComPtr<ID3D12Resource>					mpConstantBuffer;
@@ -165,6 +167,9 @@ public:
 	//ComPtr<ID3D12DescriptorHeap>			mpDsvHeap;
 
 public:
+	RenderPassResource						mRenderPass[eRenderPass_Max];
+
+public:
 	ComPtr<IDXGIFactory4>					mpFactory;
 	ComPtr<ID3D12Device>					mpDevice;
 	ComPtr<ID3D12CommandQueue>				mpCommandQueue;
@@ -173,13 +178,12 @@ public:
 	UINT64									mCurrentFrameIndex = 0;
 
 	ComPtr<IDXGISwapChain3>					mpSwapChain;
-	ComPtr<ID3D12DescriptorHeap>			mpRtvHeap;
+	DescriptorHeapObject					mRtvDescriptorHeap;
+	//ComPtr<ID3D12DescriptorHeap>			mpRtvHeap;
 	std::vector<ComPtr<ID3D12Resource>>		mvRenderTargets;
 	UINT									miRtvDescriptorSize;
 
-	ComPtr<ID3D12Resource>					mDsTexture;
-
-	ComPtr<ID3D12RootSignature>				mpRootSignature;
+	ComPtr<ID3D12Resource>					mDsvTexture;
 
 	UINT									miCurrentmiBackBufferIndex;
 

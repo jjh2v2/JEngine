@@ -141,6 +141,7 @@
     <ClInclude Include="JInput.h" />
     <ClInclude Include="MathHelper.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="RenderPassResource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="timerclass.h" />
   </ItemGroup>

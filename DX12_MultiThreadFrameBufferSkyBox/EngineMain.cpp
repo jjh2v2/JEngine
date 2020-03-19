@@ -294,12 +294,12 @@ void EngineMain::InitModules()
 		rtvHeapDesc.NumDescriptors = iSwapChainBufferCount;
 		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 		rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-		ThrowIfFailed(mpDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&mpRtvHeap)));
+		mRtvDescriptorHeap.Create(mpDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_RTV, iSwapChainBufferCount, false);
 
 		miRtvDescriptorSize = mpDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 		// 랜더타켓뷰 디스크립션힙의 첫번째 위치를 핸들로 받는다
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mpRtvHeap->GetCPUDescriptorHandleForHeapStart());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRtvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart());
 
 		// FrameCount만큼 랜더타켓(리소스)을 생성 한다
 		for (UINT n = 0; n < iSwapChainBufferCount; n++)
@@ -309,26 +309,6 @@ void EngineMain::InitModules()
 			mvRenderTargets.push_back(rtt);
 			mpDevice->CreateRenderTargetView(mvRenderTargets[n].Get(), nullptr, rtvHandle);
 			rtvHandle.Offset(1, miRtvDescriptorSize);
-		}
-	}
-
-	// Shader
-	{
-#if defined(_DEBUG)
-		// Enable better shader debugging with the graphics debugging tools.
-		UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-		UINT compileFlags = 0;
-#endif
-		std::wstring mcsFileName = L"C:/Users/jjh/Desktop/Project/JEngine/DX12_MultiThreadFrameBufferAlphaBlendDepthStencil/shaders_0.hlsl";
-		HRESULT hr = S_FALSE;
-		hr = D3DCompileFromFile(mcsFileName.c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &mpVertexShader, nullptr);
-		if (hr != S_OK)
-		{
-		}
-		hr = D3DCompileFromFile(mcsFileName.c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &mpPixelShader, nullptr);
-		if (hr != S_OK)
-		{
 		}
 	}
 
@@ -509,7 +489,7 @@ void EngineMain::InitModules()
 			&resourceDesc,
 			D3D12_RESOURCE_STATE_DEPTH_WRITE,
 			&clearVal,
-			IID_PPV_ARGS(mDsTexture.GetAddressOf())
+			IID_PPV_ARGS(mDsvTexture.GetAddressOf())
 		));
 		D3D12_DEPTH_STENCIL_VIEW_DESC depthdesc;
 		ZeroMemory(&depthdesc, sizeof(depthdesc));
@@ -518,14 +498,14 @@ void EngineMain::InitModules()
 		depthdesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
 		depthdesc.Flags = D3D12_DSV_FLAG_NONE;
 
-		mpDevice->CreateDepthStencilView(mDsTexture.Get(), &depthdesc, mDsvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart());
+		mpDevice->CreateDepthStencilView(mDsvTexture.Get(), &depthdesc, mDsvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart());
 
 		// Pre CommandList ResourceBarrier
 		{
 			for (int iCount = 0; iCount < iFrameCount; iCount++)
 			{
 				ID3D12GraphicsCommandList* pPreCommandList = mFrameResource[iCount].mPreCMDList.Get();
-				pPreCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mDsTexture.Get(),
+				pPreCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mDsvTexture.Get(),
 					D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_DEPTH_WRITE));
 			}
 		}
@@ -540,7 +520,7 @@ void EngineMain::InitModules()
 		descSRV.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 		descSRV.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		descSRV.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		mpDevice->CreateShaderResourceView(mDsTexture.Get(), &descSRV, hDescriptor);
+		mpDevice->CreateShaderResourceView(mDsvTexture.Get(), &descSRV, hDescriptor);
 	}
 
 	// Pre CommandList Close
@@ -552,115 +532,13 @@ void EngineMain::InitModules()
 		}
 	}
 
-	// CreateRootSignature
+	// Shader RootSignature PipelineState Create
 	{
-		D3D12_FEATURE_DATA_ROOT_SIGNATURE featureData = {};
-		featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_1;// D3D_ROOT_SIGNATURE_VERSION_1_0
-
-		UINT iSRVRegister = 0;// Texture2D DiffuseTexture : register(t0);
-		CD3DX12_DESCRIPTOR_RANGE1 ranges[3];
-		//ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, iSRVRegister, 0, D3D12_DESCRIPTOR_RANGE_FLAG_NONE);
-		//ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, iSRVRegister + 1, 0, D3D12_DESCRIPTOR_RANGE_FLAG_NONE);
-		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_NONE);
-		ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 1, iSRVRegister /*+ 1*/, 0, D3D12_DESCRIPTOR_RANGE_FLAG_NONE);
-		ranges[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SAMPLER, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_NONE); // s0
-		//range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 4, 0); 4은 t0 ~ t3 까지 4개가 있다는걸 알리는거?
-		//range[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0); 1개씩 따로 설정 가능 하다
-		//range[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0);
-		//range[2].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 16, 0);
-		//range[3].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 1);
-
-		CD3DX12_ROOT_PARAMETER1 rootParameters[3];
-		//rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
-		//rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
-		rootParameters[0].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_ALL);
-		rootParameters[1].InitAsDescriptorTable(1, &ranges[1], D3D12_SHADER_VISIBILITY_PIXEL);
-		rootParameters[2].InitAsDescriptorTable(1, &ranges[2], D3D12_SHADER_VISIBILITY_PIXEL); // s0
-		//rootParameters[0].InitAsConstantBufferView(0);
-
-		// SAMPLER
-		const CD3DX12_STATIC_SAMPLER_DESC pointWrap[2] = {
-			{0, // shaderRegister
-			D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressU
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP,  // addressV
-			D3D12_TEXTURE_ADDRESS_MODE_WRAP },
-
-			{1, // shaderRegister
-			D3D12_FILTER_MIN_MAG_MIP_POINT, // filter
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressU
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP,  // addressV
-			D3D12_TEXTURE_ADDRESS_MODE_CLAMP} // addressW
-		}; // addressW
-
-
-		// Allow input layout and deny uneccessary access to certain pipeline stages.
-		D3D12_ROOT_SIGNATURE_FLAGS rootSignatureFlags =
-			D3D12_ROOT_SIGNATURE_FLAG_ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT |
-			D3D12_ROOT_SIGNATURE_FLAG_DENY_HULL_SHADER_ROOT_ACCESS |
-			D3D12_ROOT_SIGNATURE_FLAG_DENY_DOMAIN_SHADER_ROOT_ACCESS |
-			D3D12_ROOT_SIGNATURE_FLAG_DENY_GEOMETRY_SHADER_ROOT_ACCESS;
-
-		CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
-		UINT sdfdf = sizeof(pointWrap) / sizeof(CD3DX12_STATIC_SAMPLER_DESC);
-		UINT iRootParameters = _countof(rootParameters);
-		//rootSignatureDesc.Init_1_1(iRootParameters, rootParameters, sdfdf, pointWrap, rootSignatureFlags);
-		// 디스크립트힙에서 디스크립트테이블로 설정할거면 여기서 샘플러 넣으면 안된다
-		rootSignatureDesc.Init_1_1(iRootParameters, rootParameters, 0, nullptr, rootSignatureFlags);
-
-		ComPtr<ID3DBlob> signature;
-		ComPtr<ID3DBlob> error;
-		ThrowIfFailed(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, featureData.HighestVersion, &signature, &error));
-		ThrowIfFailed(mpDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(), IID_PPV_ARGS(&mpRootSignature)));
-	}
-
-	// CreatePipelineState
-	{
-		// Define the vertex input layout.
-		D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
+		for (int iCount = 0; iCount < eRenderPass_Max; iCount++)
 		{
-			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
-		};
-
-		// Describe and create the graphics pipeline state object (PSO).
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc;
-		ZeroMemory(&psoDesc, sizeof(psoDesc));
-		psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
-		psoDesc.pRootSignature = mpRootSignature.Get();
-		psoDesc.VS = CD3DX12_SHADER_BYTECODE(mpVertexShader.Get());
-		psoDesc.PS = CD3DX12_SHADER_BYTECODE(mpPixelShader.Get());
-		psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		{// 알파 블랜드
-			psoDesc.BlendState.AlphaToCoverageEnable = false;
-			psoDesc.BlendState.IndependentBlendEnable = false;
-			D3D12_RENDER_TARGET_BLEND_DESC BlendDesc;
-			BlendDesc.BlendEnable = true;
-			BlendDesc.LogicOpEnable = false;
-			BlendDesc.SrcBlend = D3D12_BLEND_SRC_ALPHA;
-			BlendDesc.DestBlend = D3D12_BLEND_INV_SRC_ALPHA;
-			BlendDesc.BlendOp = D3D12_BLEND_OP_ADD;
-			BlendDesc.SrcBlendAlpha = D3D12_BLEND_ONE;
-			BlendDesc.DestBlendAlpha = D3D12_BLEND_ZERO;
-			BlendDesc.BlendOpAlpha = D3D12_BLEND_OP_ADD;
-			BlendDesc.LogicOp = D3D12_LOGIC_OP_NOOP;
-			BlendDesc.RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
-			for (UINT i = 0; i < D3D12_SIMULTANEOUS_RENDER_TARGET_COUNT; ++i)
-				psoDesc.BlendState.RenderTarget[i] = BlendDesc;
+			//  추후에는 DescriptorHeap(상수버퍼, 셈플러)도 여기서 생성하게 하자
+			mRenderPass[iCount].Init(static_cast<eRenderPass>(iCount), mpDevice.Get());
 		}
-		psoDesc.SampleMask = UINT_MAX;
-		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		psoDesc.NumRenderTargets = 1;
-		psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-		psoDesc.DSVFormat = DXGI_FORMAT_D24_UNORM_S8_UINT;// 이거 안했다고 콘솔에 워링뜬다
-		psoDesc.SampleDesc.Count = 1;
-
-		ThrowIfFailed(mpDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mpPipelineState)));
 	}
 
 	// CreateFence
@@ -744,6 +622,8 @@ void EngineMain::OnUpdate()
 void EngineMain::OnRender()
 {
 	/*
+	0. SimpleDirectPBR SkyBox.hlsl : https://docs.microsoft.com/ko-kr/windows/win32/direct3d12/specifying-root-signatures-in-hlsl
+	세이더 + RootSignature + PipelineState 한세트로 가는듯 한데
 	0. PipelineState객체 프레임별 따로 만들기 코드 만들기
 	1. 스카이 박스 (ElixirEngine.sln)
 	2. PBR? 랜더타겟역러개?
@@ -755,14 +635,14 @@ void EngineMain::OnRender()
 		ID3D12CommandAllocator* pCommandAllocator = mFrameResource[mCurrentFrameIndex].mVecMultithreadCMDAllocator[threadIndex];
 		ID3D12GraphicsCommandList* pCommandList = mFrameResource[mCurrentFrameIndex].mVecMultithreadCMDList[threadIndex];
 		ThrowIfFailed(pCommandAllocator->Reset());
-		ThrowIfFailed(pCommandList->Reset(pCommandAllocator, mpPipelineState.Get()));
+		ThrowIfFailed(pCommandList->Reset(pCommandAllocator, mRenderPass[eRenderPass_Normal].mpPipelineState.Get()));
 
-		pCommandList->SetPipelineState(mpPipelineState.Get());
+		pCommandList->SetPipelineState(mRenderPass[eRenderPass_Normal].mpPipelineState.Get());
 		pCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		pCommandList->RSSetViewports(1, &mViewport);
 		pCommandList->RSSetScissorRects(1, &mScissorRect);
-
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mpRtvHeap->GetCPUDescriptorHandleForHeapStart(), miCurrentmiBackBufferIndex, miRtvDescriptorSize);
+		
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRtvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart(), miCurrentmiBackBufferIndex, miRtvDescriptorSize);
 		pCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &mDsvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart());
 
 		{// 리소스 설정, 파이프라인상태 설정
@@ -772,7 +652,7 @@ void EngineMain::OnRender()
 			디스크립트힙 핸들 주소 계산을 쉽게 하기 위해서는 텍스쳐를 먼저 생성하고 상수 버퍼를 나중에 하는방향으로?
 			텍스쳐는 고정몃개 맥스치 정해주면 될거같은데 상수버퍼는 기하급수적으로 늘어날수 있어서?
 			*/
-			pCommandList->SetGraphicsRootSignature(mpRootSignature.Get());
+			pCommandList->SetGraphicsRootSignature(mRenderPass[eRenderPass_Normal].mpRootSignature.Get());
 			// 디스크립트힙은 같은유형은 여러개 안된다 D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV가 같은 타입 복수 안됨
 			ID3D12DescriptorHeap* ppHeaps[] = { mCBVDescriptorHeap.pDH.Get(), mSampleDescriptorHeap.pDH.Get() };
 			pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
@@ -838,10 +718,10 @@ void EngineMain::OnRender()
 
 	{// Pre
 		ThrowIfFailed(pPreCommandAllocator->Reset());
-		ThrowIfFailed(pPreCommandList->Reset(pPreCommandAllocator, mpPipelineState.Get()));
+		ThrowIfFailed(pPreCommandList->Reset(pPreCommandAllocator, mRenderPass[eRenderPass_Normal].mpPipelineState.Get()));
 
 		pPreCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mvRenderTargets[miCurrentmiBackBufferIndex].Get(), D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET));
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mpRtvHeap->GetCPUDescriptorHandleForHeapStart(), miCurrentmiBackBufferIndex, miRtvDescriptorSize);
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRtvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart(), miCurrentmiBackBufferIndex, miRtvDescriptorSize);
 		pPreCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &mDsvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart());
 		// Record commands.
 		const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
@@ -852,7 +732,7 @@ void EngineMain::OnRender()
 	
 	{// Post
 		ThrowIfFailed(pPostCommandAllocator->Reset());
-		ThrowIfFailed(pPostCommandList->Reset(pPostCommandAllocator, mpPipelineState.Get()));
+		ThrowIfFailed(pPostCommandList->Reset(pPostCommandAllocator, mRenderPass[eRenderPass_Normal].mpPipelineState.Get()));
 
 		//pPostCommandList->OMSetRenderTargets(1, &swapChainBuffer->mRenderTargetView, true, &mDepthStencilView);
 

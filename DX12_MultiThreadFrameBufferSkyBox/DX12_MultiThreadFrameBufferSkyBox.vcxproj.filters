@@ -78,6 +78,9 @@
     <ClInclude Include="timerclass.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="RenderPassResource.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DirectXTK12\DDSTextureLoader.cpp">
