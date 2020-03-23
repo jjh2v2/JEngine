@@ -137,6 +137,7 @@ public:
 	Camera* mCamera;
 	BYTE* mPCBVDataBegin;
 	std::vector<JMesh *> mObj;
+	JMesh*				mSkyBoxObj;
 	std::unordered_map<std::string, std::unique_ptr<JTexture>> mTextures;
 
 	int				iNumberOfProcessors = 4;

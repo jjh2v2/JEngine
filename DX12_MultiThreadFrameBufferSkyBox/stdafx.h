@@ -64,6 +64,7 @@ namespace MS = Microsoft::WRL;
 using namespace DirectX;
 using Microsoft::WRL::ComPtr;
 
+
 inline void ThrowIfFailed(HRESULT hr)
 {
 	if (FAILED(hr))

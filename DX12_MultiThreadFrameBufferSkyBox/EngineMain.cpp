@@ -318,6 +318,7 @@ void EngineMain::InitModules()
 		mObj.push_back(new JMesh("square", mpDevice.Get(), nullptr, XMFLOAT3(-0.1f, 0.3f, 1.0f)));
 		mObj.push_back(new JMesh("square", mpDevice.Get(), nullptr, XMFLOAT3(-0.7f, -0.2f, 2.0f)));
 		mObj.push_back(new JMesh("square", mpDevice.Get(), nullptr, XMFLOAT3(-1.3f, -0.7f, 3.0f)));
+		mSkyBoxObj = new JMesh("cube", mpDevice.Get(), nullptr, XMFLOAT3(0.0f, 0.0f, 0.0f));
 	}
 
 	// DescriptorHeap 생성시에 NumDescriptors를 크게 잡아서 하자
@@ -365,6 +366,14 @@ void EngineMain::InitModules()
 			D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mCBVDescriptorHeap.GetCurrentGPU();
 			mObj[i]->mGPUHANDLE.ptr = gpuhandle.ptr;
 		}
+
+		//
+		descBuffer.BufferLocation = mpConstantBuffer->GetGPUVirtualAddress() + mObj.size() * mElementByteSize;
+		D3D12_CPU_DESCRIPTOR_HANDLE handle = mCBVDescriptorHeap.Append();
+		mpDevice->CreateConstantBufferView(&descBuffer, handle);
+
+		D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mCBVDescriptorHeap.GetCurrentGPU();
+		mSkyBoxObj->mGPUHANDLE.ptr = gpuhandle.ptr;
 
 		ThrowIfFailed(mpConstantBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mPCBVDataBegin)));
 	}
@@ -431,7 +440,7 @@ void EngineMain::InitModules()
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = woodCrateTexss->GetDesc().Format;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.MipLevels = woodCrateTexss->GetDesc().MipLevels;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
@@ -732,9 +741,30 @@ void EngineMain::OnRender()
 	
 	{// Post
 		ThrowIfFailed(pPostCommandAllocator->Reset());
-		ThrowIfFailed(pPostCommandList->Reset(pPostCommandAllocator, mRenderPass[eRenderPass_Normal].mpPipelineState.Get()));
+		ThrowIfFailed(pPostCommandList->Reset(pPostCommandAllocator, mRenderPass[eRenderPass_Post].mpPipelineState.Get()));
 
-		//pPostCommandList->OMSetRenderTargets(1, &swapChainBuffer->mRenderTargetView, true, &mDepthStencilView);
+		///////////
+		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRtvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart(), miCurrentmiBackBufferIndex, miRtvDescriptorSize);
+		pPostCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &mDsvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart());
+
+		pPostCommandList->SetPipelineState(mRenderPass[eRenderPass_Post].mpPipelineState.Get());
+		pPostCommandList->SetGraphicsRootSignature(mRenderPass[eRenderPass_Post].mpRootSignature.Get());
+		pPostCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+		ID3D12DescriptorHeap* ppHeaps[] = { mCBVDescriptorHeap.pDH.Get(), mSampleDescriptorHeap.pDH.Get() };
+		pPostCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+
+		pPostCommandList->SetGraphicsRootDescriptorTable(0, mSkyBoxObj->mGPUHANDLE);
+		pPostCommandList->SetGraphicsRootDescriptorTable(1, mTextures["skymap0"]->mGPUHANDLE);
+		D3D12_GPU_DESCRIPTOR_HANDLE mSampler = mSampleDescriptorHeap.GetCurrentGPU(0);;
+		UINT mSmapleDescriptorSize = mpDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
+		mSampler.ptr += 0 * mSmapleDescriptorSize;
+		pPostCommandList->SetGraphicsRootDescriptorTable(2, mSampler);
+
+		pPostCommandList->IASetVertexBuffers(0, 1, &mSkyBoxObj->GetVertexBufferView());
+		pPostCommandList->IASetIndexBuffer(&mSkyBoxObj->GetIndexBufferView());
+		pPostCommandList->DrawIndexedInstanced(mSkyBoxObj->GetIndexCount(), 1, 0, 0, 0);
+		///////////
 
 		// Indicate that the back buffer will now be used to present.
 		pPostCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mvRenderTargets[miCurrentmiBackBufferIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
