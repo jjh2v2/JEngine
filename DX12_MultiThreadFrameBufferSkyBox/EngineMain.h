@@ -76,6 +76,10 @@ public:
 	ComPtr<ID3D12CommandAllocator>					mPreCMDAllocator;
 	ComPtr<ID3D12GraphicsCommandList>				mPreCMDList;
 
+	// 스카이박
+	ComPtr<ID3D12CommandAllocator>					mSkyCMDAllocator;
+	ComPtr<ID3D12GraphicsCommandList>				mSkyCMDList;
+
 	// Post 스카이박스나 UI 그린다
 	ComPtr<ID3D12CommandAllocator>					mPostCMDAllocator;
 	ComPtr<ID3D12GraphicsCommandList>				mPostCMDList;

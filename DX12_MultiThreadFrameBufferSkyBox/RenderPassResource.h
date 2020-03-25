@@ -9,6 +9,7 @@ enum eRenderPass
 {
 	eRenderPass_Normal = 0,
 	eRenderPass_Pre,
+	eRenderPass_Sky,
 	eRenderPass_Post,
 	eRenderPass_Max
 };
@@ -52,6 +53,9 @@ public:
 			break;
 		case eRenderPass_Pre:
 			InitPre();
+			break;
+		case eRenderPass_Sky:
+			InitSky();
 			break;
 		case eRenderPass_Post:
 			InitPost();
@@ -200,7 +204,7 @@ public:
 		
 	};
 
-	void InitPost()
+	void InitSky()
 	{
 		// Shader
 		{
@@ -279,8 +283,11 @@ public:
 			// Define the vertex input layout.
 			D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
 			{
-				{ "_Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-				{ "_Normal", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
+				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 20, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 32, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+				{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 }
 			};
 
 			// Describe and create the graphics pipeline state object (PSO).
@@ -319,6 +326,11 @@ public:
 
 			ThrowIfFailed(mpDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&mpPipelineState)));
 		}
+	};
+
+	void InitPost()
+	{
+
 	};
 
 	std::vector<uint8_t> LoadFile(const char* Name, const char* Parm)

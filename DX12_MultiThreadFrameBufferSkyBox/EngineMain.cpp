@@ -228,6 +228,12 @@ void EngineMain::InitModules()
 				//ThrowIfFailed(mFrameResource[iCount].mPreCMDList->Close());
 			}
 
+			{// SkyBox
+				ThrowIfFailed(mpDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mFrameResource[iCount].mSkyCMDAllocator)));
+				ThrowIfFailed(mpDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mFrameResource[iCount].mSkyCMDAllocator.Get(), nullptr, IID_PPV_ARGS(&mFrameResource[iCount].mSkyCMDList)));
+				ThrowIfFailed(mFrameResource[iCount].mSkyCMDList->Close());
+			}
+
 			{// Post
 				ThrowIfFailed(mpDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&mFrameResource[iCount].mPostCMDAllocator)));
 				ThrowIfFailed(mpDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, mFrameResource[iCount].mPostCMDAllocator.Get(), nullptr, IID_PPV_ARGS(&mFrameResource[iCount].mPostCMDList)));
@@ -318,7 +324,7 @@ void EngineMain::InitModules()
 		mObj.push_back(new JMesh("square", mpDevice.Get(), nullptr, XMFLOAT3(-0.1f, 0.3f, 1.0f)));
 		mObj.push_back(new JMesh("square", mpDevice.Get(), nullptr, XMFLOAT3(-0.7f, -0.2f, 2.0f)));
 		mObj.push_back(new JMesh("square", mpDevice.Get(), nullptr, XMFLOAT3(-1.3f, -0.7f, 3.0f)));
-		mSkyBoxObj = new JMesh("cube", mpDevice.Get(), nullptr, XMFLOAT3(0.0f, 0.0f, 0.0f));
+		mSkyBoxObj = new JMesh("square", mpDevice.Get(), nullptr, XMFLOAT3(0.01f, 0.01f, 0.01f));
 	}
 
 	// DescriptorHeap 생성시에 NumDescriptors를 크게 잡아서 하자
@@ -440,7 +446,7 @@ void EngineMain::InitModules()
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 		srvDesc.Format = woodCrateTexss->GetDesc().Format;
-		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MostDetailedMip = 0;
 		srvDesc.Texture2D.MipLevels = woodCrateTexss->GetDesc().MipLevels;
 		srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
@@ -626,6 +632,22 @@ void EngineMain::OnUpdate()
 		size_t d = (sizeof(SceneConstantBuffer) + 255) & ~255;;
 		memcpy(&mPCBVDataBegin[iCount * d], &mConstantBufferData, sizeof(mConstantBufferData));
 	}
+
+	{
+		SceneConstantBuffer mConstantBufferData;
+
+		XMMATRIX wvpMat = XMLoadFloat4x4(&mSkyBoxObj->mWorld) * viewMat * projMat; // create wvp matrix
+		XMMATRIX transposed = XMMatrixTranspose(wvpMat); // must transpose wvp matrix for the gpu
+		XMFLOAT4X4 wvp;
+		XMStoreFloat4x4(&wvp, transposed); // store transposed wvp matrix in constant buffer
+		mConstantBufferData.worldViewProjection = wvp;
+		XMFLOAT3 ds = mSkyBoxObj->GetPosition();
+		//ds.x += 0.2f * deletaTime;
+		mSkyBoxObj->SetPosition(ds);
+		mConstantBufferData.world = mSkyBoxObj->GetWorld();
+		size_t d = (sizeof(SceneConstantBuffer) + 255) & ~255;;
+		memcpy(&mPCBVDataBegin[mObj.size() * d], &mConstantBufferData, sizeof(mConstantBufferData));
+	}
 }
 
 void EngineMain::OnRender()
@@ -722,6 +744,10 @@ void EngineMain::OnRender()
 
 	ID3D12CommandAllocator* pPreCommandAllocator = mFrameResource[mCurrentFrameIndex].mPreCMDAllocator.Get();
 	ID3D12GraphicsCommandList* pPreCommandList = mFrameResource[mCurrentFrameIndex].mPreCMDList.Get();
+
+	ID3D12CommandAllocator* pSkyCommandAllocator = mFrameResource[mCurrentFrameIndex].mSkyCMDAllocator.Get();
+	ID3D12GraphicsCommandList* pSkyCommandList = mFrameResource[mCurrentFrameIndex].mSkyCMDList.Get();
+
 	ID3D12CommandAllocator* pPostCommandAllocator = mFrameResource[mCurrentFrameIndex].mPostCMDAllocator.Get();
 	ID3D12GraphicsCommandList* pPostCommandList = mFrameResource[mCurrentFrameIndex].mPostCMDList.Get();
 
@@ -739,32 +765,42 @@ void EngineMain::OnRender()
 		ThrowIfFailed(pPreCommandList->Close());
 	}
 	
-	{// Post
-		ThrowIfFailed(pPostCommandAllocator->Reset());
-		ThrowIfFailed(pPostCommandList->Reset(pPostCommandAllocator, mRenderPass[eRenderPass_Post].mpPipelineState.Get()));
+	{// Sky
+		ThrowIfFailed(pSkyCommandAllocator->Reset());
+		ThrowIfFailed(pSkyCommandList->Reset(pSkyCommandAllocator, mRenderPass[eRenderPass_Sky].mpPipelineState.Get()));
 
 		///////////
 		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(mRtvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart(), miCurrentmiBackBufferIndex, miRtvDescriptorSize);
-		pPostCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &mDsvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart());
+		pSkyCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &mDsvDescriptorHeap.pDH->GetCPUDescriptorHandleForHeapStart());
+		pSkyCommandList->RSSetViewports(1, &mViewport);
+		pSkyCommandList->RSSetScissorRects(1, &mScissorRect);
 
-		pPostCommandList->SetPipelineState(mRenderPass[eRenderPass_Post].mpPipelineState.Get());
-		pPostCommandList->SetGraphicsRootSignature(mRenderPass[eRenderPass_Post].mpRootSignature.Get());
-		pPostCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		pSkyCommandList->SetPipelineState(mRenderPass[eRenderPass_Sky].mpPipelineState.Get());
+		pSkyCommandList->SetGraphicsRootSignature(mRenderPass[eRenderPass_Sky].mpRootSignature.Get());
+		pSkyCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 		ID3D12DescriptorHeap* ppHeaps[] = { mCBVDescriptorHeap.pDH.Get(), mSampleDescriptorHeap.pDH.Get() };
-		pPostCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+		pSkyCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-		pPostCommandList->SetGraphicsRootDescriptorTable(0, mSkyBoxObj->mGPUHANDLE);
-		pPostCommandList->SetGraphicsRootDescriptorTable(1, mTextures["skymap0"]->mGPUHANDLE);
+		pSkyCommandList->SetGraphicsRootDescriptorTable(0, mSkyBoxObj->mGPUHANDLE);
+		pSkyCommandList->SetGraphicsRootDescriptorTable(1, mTextures["skymap0"]->mGPUHANDLE);
 		D3D12_GPU_DESCRIPTOR_HANDLE mSampler = mSampleDescriptorHeap.GetCurrentGPU(0);;
 		UINT mSmapleDescriptorSize = mpDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_SAMPLER);
 		mSampler.ptr += 0 * mSmapleDescriptorSize;
-		pPostCommandList->SetGraphicsRootDescriptorTable(2, mSampler);
+		pSkyCommandList->SetGraphicsRootDescriptorTable(2, mSampler);
 
-		pPostCommandList->IASetVertexBuffers(0, 1, &mSkyBoxObj->GetVertexBufferView());
-		pPostCommandList->IASetIndexBuffer(&mSkyBoxObj->GetIndexBufferView());
-		pPostCommandList->DrawIndexedInstanced(mSkyBoxObj->GetIndexCount(), 1, 0, 0, 0);
+		pSkyCommandList->IASetVertexBuffers(0, 1, &mSkyBoxObj->GetVertexBufferView());
+		pSkyCommandList->IASetIndexBuffer(&mSkyBoxObj->GetIndexBufferView());
+		pSkyCommandList->DrawIndexedInstanced(mSkyBoxObj->GetIndexCount(), 1, 0, 0, 0);
 		///////////
+
+		// Indicate that the back buffer will now be used to present.
+		ThrowIfFailed(pSkyCommandList->Close());
+	}
+
+	{// Post
+		ThrowIfFailed(pPostCommandAllocator->Reset());
+		ThrowIfFailed(pPostCommandList->Reset(pPostCommandAllocator, mRenderPass[eRenderPass_Post].mpPipelineState.Get()));
 
 		// Indicate that the back buffer will now be used to present.
 		pPostCommandList->ResourceBarrier(1, &CD3DX12_RESOURCE_BARRIER::Transition(mvRenderTargets[miCurrentmiBackBufferIndex].Get(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT));
@@ -779,6 +815,7 @@ void EngineMain::OnRender()
 	{
 		ppCommandLists.push_back(mFrameResource[mCurrentFrameIndex].mVecMultithreadCMDList[iCount]);
 	}
+	ppCommandLists.push_back(pSkyCommandList);
 	ppCommandLists.push_back(pPostCommandList);
 
 	mpCommandQueue->ExecuteCommandLists(
@@ -792,6 +829,7 @@ void EngineMain::OnRender()
 		mFrameResource[mCurrentFrameIndex].mVecMultithreadCMDList[1],
 		mFrameResource[mCurrentFrameIndex].mVecMultithreadCMDList[2],
 		mFrameResource[mCurrentFrameIndex].mVecMultithreadCMDList[3],
+		pSkyCommandList,
 		pPostCommandList };
 	mpCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);*/
 
