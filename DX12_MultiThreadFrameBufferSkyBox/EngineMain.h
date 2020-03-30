@@ -96,19 +96,27 @@ public:
 class EngineMain
 {
 public:
+
+	void FlushCommandQueue()
+	{
+		const UINT64 currentFenceValue = mFrameResource[mCurrentFrameIndex].mFenceValue;
+		ThrowIfFailed(mpCommandQueue->Signal(mFence.Get(), currentFenceValue));
+
+		// Update the frame index.
+		miCurrentmiBackBufferIndex = mpSwapChain->GetCurrentBackBufferIndex();
+
+		// If the next frame is not ready to be rendered yet, wait until it is ready.
+		if (mFence->GetCompletedValue() < mFrameResource[mCurrentFrameIndex].mFenceValue)
+		{
+			ThrowIfFailed(mFence->SetEventOnCompletion(mFrameResource[mCurrentFrameIndex].mFenceValue, mFenceEvent));
+			WaitForSingleObjectEx(mFenceEvent, INFINITE, FALSE);
+			CloseHandle(mFenceEvent);
+		}
+	}
+
 	~EngineMain()
 	{
-		mpConstantBuffer->Unmap(0, nullptr);
-		mpConstantBuffer->Release();
-		mpConstantBuffer.Detach();
-		mDsvTexture->Release();
-		mDsvTexture.Detach();
-
-		for (int iIndex = 0; iIndex < mvRenderTargets.size(); iIndex++)
-		{
-			mvRenderTargets[iIndex]->Release();
-			mvRenderTargets[iIndex].Detach();
-		}
+		FlushCommandQueue();
 	}
 
 public:
@@ -125,7 +133,6 @@ public:
 
 	TimerClass mTimerClass;
 	Camera* mCamera;
-	BYTE* mPCBVDataBegin;
 	std::vector<JMesh *> mObj;
 	JMesh*				mSkyBoxObj;
 	std::unordered_map<std::string, std::unique_ptr<JTexture>> mTextures;
@@ -140,17 +147,6 @@ public:
 	void WaitForPreviousFrame();
 
 public:
-	//ComPtr<ID3DBlob>						mpVertexShader;
-	//ComPtr<ID3DBlob>						mpPixelShader;
-	//ComPtr<ID3D12PipelineState>				mpPipelineState;
-	//ComPtr<ID3D12RootSignature>				mpRootSignature;
-
-public:
-	ComPtr<ID3D12Resource>					mpConstantBuffer;
-
-	DescriptorHeapObject					mCBVDescriptorHeap;
-	//ComPtr<ID3D12DescriptorHeap>			mpCBVHeap;
-
 	DescriptorHeapObject					mSampleDescriptorHeap;
 	//ComPtr<ID3D12DescriptorHeap>			mpSampleHeap;
 
@@ -170,7 +166,6 @@ public:
 
 	ComPtr<IDXGISwapChain3>					mpSwapChain;
 	DescriptorHeapObject					mRtvDescriptorHeap;
-	//ComPtr<ID3D12DescriptorHeap>			mpRtvHeap;
 	std::vector<ComPtr<ID3D12Resource>>		mvRenderTargets;
 	UINT									miRtvDescriptorSize;
 

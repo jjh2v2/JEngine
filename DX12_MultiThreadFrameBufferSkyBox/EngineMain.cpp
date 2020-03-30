@@ -327,61 +327,45 @@ void EngineMain::InitModules()
 		mSkyBoxObj = new JMesh("square", mpDevice.Get(), nullptr, XMFLOAT3(0.01f, 0.01f, 0.01f));
 	}
 
-	// DescriptorHeap 생성시에 NumDescriptors를 크게 잡아서 하자
-	UINT NumDescriptors = 131072;// 131072, 8192;//1,000,000+(디스크립트 개당 최대?) 디스크립트힙이 가질수 있는 총 디스크립트갯수 { 상수버퍼(CBV) + 이미지(SRV) + 정렬되지않은액세스뷰(UAV) }
-	// CreateDescriptorHeap
+	// Shader RootSignature PipelineState Create
 	{
-		// Describe and create a constant buffer view (CBV) descriptor heap.
-		// Flags indicate that this descriptor heap can be bound to the pipeline 
-		// and that descriptors contained in it can be referenced by a root table.
-		/*D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
-		cbvHeapDesc.NumDescriptors = NumDescriptors;
-		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		ThrowIfFailed(mpDevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&mpCBVHeap)));*/
-		mCBVDescriptorHeap.Create(mpDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, NumDescriptors, true);
+		for (int iCount = 0; iCount < eRenderPass_Max; iCount++)
+		{
+			//  추후에는 DescriptorHeap(상수버퍼, 셈플러)도 여기서 생성하게 하자
+			mRenderPass[iCount].Init(static_cast<eRenderPass>(iCount), mpDevice.Get());
+		}
 	}
 
-
-	
 	// CreateConstantBufferView
 	{
 		UINT mElementByteSize = sizeof(SceneConstantBuffer);
-		// (sizeof(SceneConstantBuffer) + 255) & ~255;    // CB size is required to be 256-byte aligned.
 		mElementByteSize = (sizeof(SceneConstantBuffer) + 255) & ~255;
 
-		ThrowIfFailed(mpDevice->CreateCommittedResource(
-			&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
-			D3D12_HEAP_FLAG_NONE,
-			&CD3DX12_RESOURCE_DESC::Buffer(mElementByteSize * NumDescriptors/*mObj.size()*/),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&mpConstantBuffer)));
-
-
 		D3D12_CONSTANT_BUFFER_VIEW_DESC	descBuffer;
-		descBuffer.BufferLocation = mpConstantBuffer->GetGPUVirtualAddress();
+		descBuffer.BufferLocation = mRenderPass[eRenderPass_Normal].mpConstantBuffer->GetGPUVirtualAddress();
 		descBuffer.SizeInBytes = mElementByteSize;
 		UINT HandleIncrementSize = mpDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 		for (int i = 0; i < mObj.size(); ++i)
 		{
-			descBuffer.BufferLocation = mpConstantBuffer->GetGPUVirtualAddress() + i * mElementByteSize;
-			D3D12_CPU_DESCRIPTOR_HANDLE handle = mCBVDescriptorHeap.Append();
+			descBuffer.BufferLocation = mRenderPass[eRenderPass_Normal].mpConstantBuffer->GetGPUVirtualAddress() + i * mElementByteSize;
+			D3D12_CPU_DESCRIPTOR_HANDLE handle = mRenderPass[eRenderPass_Normal].mCBVDescriptorHeap.Append();
 			mpDevice->CreateConstantBufferView(&descBuffer, handle);
 
-			D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mCBVDescriptorHeap.GetCurrentGPU();
+			D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mRenderPass[eRenderPass_Normal].mCBVDescriptorHeap.GetCurrentGPU();
 			mObj[i]->mGPUHANDLE.ptr = gpuhandle.ptr;
 		}
+		ThrowIfFailed(mRenderPass[eRenderPass_Normal].mpConstantBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mRenderPass[eRenderPass_Normal].mPCBVDataBegin)));
 
 		//
-		descBuffer.BufferLocation = mpConstantBuffer->GetGPUVirtualAddress() + mObj.size() * mElementByteSize;
-		D3D12_CPU_DESCRIPTOR_HANDLE handle = mCBVDescriptorHeap.Append();
+		descBuffer.BufferLocation = mRenderPass[eRenderPass_Sky].mpConstantBuffer->GetGPUVirtualAddress() + 0 * mElementByteSize;
+		D3D12_CPU_DESCRIPTOR_HANDLE handle = mRenderPass[eRenderPass_Sky].mCBVDescriptorHeap.Append();
 		mpDevice->CreateConstantBufferView(&descBuffer, handle);
 
-		D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mCBVDescriptorHeap.GetCurrentGPU();
+		D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mRenderPass[eRenderPass_Sky].mCBVDescriptorHeap.GetCurrentGPU();
 		mSkyBoxObj->mGPUHANDLE.ptr = gpuhandle.ptr;
+		ThrowIfFailed(mRenderPass[eRenderPass_Sky].mpConstantBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mRenderPass[eRenderPass_Sky].mPCBVDataBegin)));
 
-		ThrowIfFailed(mpConstantBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mPCBVDataBegin)));
+		
 	}
 
 	// CreateTexture
@@ -404,8 +388,8 @@ void EngineMain::InitModules()
 		uploadResourcesFinished.wait();
 
 		// 텍스쳐 재 생성
-		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeap.Append();
-		D3D12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor = mCBVDescriptorHeap.GetCurrentGPU();
+		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mRenderPass[eRenderPass_Normal].mCBVDescriptorHeap.Append();
+		D3D12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor = mRenderPass[eRenderPass_Normal].mCBVDescriptorHeap.GetCurrentGPU();
 		mTextures["bricks"]->mGPUHANDLE.ptr = hGpuDescriptor.ptr;
 		//hDescriptor.Offset()
 		auto woodCrateTexss = mTextures["bricks"]->Resource;
@@ -437,10 +421,10 @@ void EngineMain::InitModules()
 		auto uploadResourcesFinished = resourceUpload.End(mpCommandQueue.Get());
 		// Wait for the upload thread to terminate
 		uploadResourcesFinished.wait();
-
+		
 		// 텍스쳐 재 생성
-		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeap.Append();
-		D3D12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor = mCBVDescriptorHeap.GetCurrentGPU();
+		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mRenderPass[eRenderPass_Sky].mCBVDescriptorHeap.Append();
+		D3D12_GPU_DESCRIPTOR_HANDLE hGpuDescriptor = mRenderPass[eRenderPass_Sky].mCBVDescriptorHeap.GetCurrentGPU();
 		mTextures["skymap0"]->mGPUHANDLE.ptr = hGpuDescriptor.ptr;
 		auto woodCrateTexss = mTextures["skymap0"]->Resource;
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
@@ -526,8 +510,7 @@ void EngineMain::InitModules()
 		}
 
 		//쉐이더로 보넬 텍스쳐로 만드는법?
-		D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mCBVDescriptorHeap.Append();
-
+		/*D3D12_CPU_DESCRIPTOR_HANDLE hDescriptor = mRenderPass[eRenderPass_Normal].mCBVDescriptorHeap.Append();
 		D3D12_SHADER_RESOURCE_VIEW_DESC descSRV;
 		ZeroMemory(&descSRV, sizeof(descSRV));
 		descSRV.Texture2D.MipLevels = resourceDesc.MipLevels;
@@ -535,7 +518,7 @@ void EngineMain::InitModules()
 		descSRV.Format = DXGI_FORMAT_R24_UNORM_X8_TYPELESS;
 		descSRV.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		descSRV.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-		mpDevice->CreateShaderResourceView(mDsvTexture.Get(), &descSRV, hDescriptor);
+		mpDevice->CreateShaderResourceView(mDsvTexture.Get(), &descSRV, hDescriptor);*/
 	}
 
 	// Pre CommandList Close
@@ -544,15 +527,6 @@ void EngineMain::InitModules()
 		{
 			ID3D12GraphicsCommandList* pPreCommandList = mFrameResource[iCount].mPreCMDList.Get();
 			pPreCommandList->Close();
-		}
-	}
-
-	// Shader RootSignature PipelineState Create
-	{
-		for (int iCount = 0; iCount < eRenderPass_Max; iCount++)
-		{
-			//  추후에는 DescriptorHeap(상수버퍼, 셈플러)도 여기서 생성하게 하자
-			mRenderPass[iCount].Init(static_cast<eRenderPass>(iCount), mpDevice.Get());
 		}
 	}
 
@@ -584,26 +558,26 @@ void EngineMain::AddBuffe()
 	mElementByteSize = (sizeof(SceneConstantBuffer) + 255) & ~255;
 
 	D3D12_CONSTANT_BUFFER_VIEW_DESC	descBuffer;
-	descBuffer.BufferLocation = mpConstantBuffer->GetGPUVirtualAddress();
+	descBuffer.BufferLocation = mRenderPass[eRenderPass_Normal].mpConstantBuffer->GetGPUVirtualAddress();
 	descBuffer.SizeInBytes = mElementByteSize;
 	//for (int i = 0; i < mObj.size(); ++i)
 	{
 		size_t iAddress = mObj.size();
 		// BufferLocation는 상수버퍼(지역) 안에서만의 위치같다
-		descBuffer.BufferLocation = mpConstantBuffer->GetGPUVirtualAddress() + iAddress * mElementByteSize;
-		D3D12_CPU_DESCRIPTOR_HANDLE handle = mCBVDescriptorHeap.Append();
+		descBuffer.BufferLocation = mRenderPass[eRenderPass_Normal].mpConstantBuffer->GetGPUVirtualAddress() + iAddress * mElementByteSize;
+		D3D12_CPU_DESCRIPTOR_HANDLE handle = mRenderPass[eRenderPass_Normal].mCBVDescriptorHeap.Append();
 		// 상수버퍼 2개를 초기에 먼저 만들고나서 텍스쳐를 만들었다
 		// 키다운을 하면 상수버퍼를 하나 추가 하는데 인덱스 2에 이미 텍스쳐가 있어서 (iAddress+1)해야한다
 		mpDevice->CreateConstantBufferView(&descBuffer, handle);
 	}
 
-	ThrowIfFailed(mpConstantBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mPCBVDataBegin)));
+	ThrowIfFailed(mRenderPass[eRenderPass_Normal].mpConstantBuffer->Map(0, nullptr, reinterpret_cast<void**>(&mRenderPass[eRenderPass_Normal].mPCBVDataBegin)));
 
 	mObj.push_back(new JMesh("square", mpDevice.Get(), nullptr, XMFLOAT3(-1.3f, 0.0f, 0.0f)));
 
 	// 택스쳐가 하나 4번인덱스에 있어서 마지막에 iLastIndex + 1을 한번더 해준다
 	size_t iLastIndex = (mObj.size() - 1);
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mCBVDescriptorHeap.GetCurrentGPU();
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuhandle = mRenderPass[eRenderPass_Normal].mCBVDescriptorHeap.GetCurrentGPU();
 	mObj[iLastIndex]->mGPUHANDLE.ptr = gpuhandle.ptr;
 }
 
@@ -630,7 +604,7 @@ void EngineMain::OnUpdate()
 		mObj[iCount]->SetPosition(ds);
 		mConstantBufferData.world = mObj[iCount]->GetWorld();
 		size_t d = (sizeof(SceneConstantBuffer) + 255) & ~255;;
-		memcpy(&mPCBVDataBegin[iCount * d], &mConstantBufferData, sizeof(mConstantBufferData));
+		memcpy(&mRenderPass[eRenderPass_Normal].mPCBVDataBegin[iCount * d], &mConstantBufferData, sizeof(mConstantBufferData));
 	}
 
 	{
@@ -646,7 +620,7 @@ void EngineMain::OnUpdate()
 		mSkyBoxObj->SetPosition(ds);
 		mConstantBufferData.world = mSkyBoxObj->GetWorld();
 		size_t d = (sizeof(SceneConstantBuffer) + 255) & ~255;;
-		memcpy(&mPCBVDataBegin[mObj.size() * d], &mConstantBufferData, sizeof(mConstantBufferData));
+		memcpy(&mRenderPass[eRenderPass_Sky].mPCBVDataBegin[0 * d], &mConstantBufferData, sizeof(mConstantBufferData));
 	}
 }
 
@@ -685,7 +659,7 @@ void EngineMain::OnRender()
 			*/
 			pCommandList->SetGraphicsRootSignature(mRenderPass[eRenderPass_Normal].mpRootSignature.Get());
 			// 디스크립트힙은 같은유형은 여러개 안된다 D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV가 같은 타입 복수 안됨
-			ID3D12DescriptorHeap* ppHeaps[] = { mCBVDescriptorHeap.pDH.Get(), mSampleDescriptorHeap.pDH.Get() };
+			ID3D12DescriptorHeap* ppHeaps[] = { mRenderPass[eRenderPass_Normal].mCBVDescriptorHeap.pDH.Get(), mSampleDescriptorHeap.pDH.Get() };
 			pCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 			for (int i = threadIndex; i < mObj.size(); i += iNumberOfProcessors)
 			{
@@ -779,7 +753,7 @@ void EngineMain::OnRender()
 		pSkyCommandList->SetGraphicsRootSignature(mRenderPass[eRenderPass_Sky].mpRootSignature.Get());
 		pSkyCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		ID3D12DescriptorHeap* ppHeaps[] = { mCBVDescriptorHeap.pDH.Get(), mSampleDescriptorHeap.pDH.Get() };
+		ID3D12DescriptorHeap* ppHeaps[] = { mRenderPass[eRenderPass_Sky].mCBVDescriptorHeap.pDH.Get(), mSampleDescriptorHeap.pDH.Get() };
 		pSkyCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
 		pSkyCommandList->SetGraphicsRootDescriptorTable(0, mSkyBoxObj->mGPUHANDLE);
