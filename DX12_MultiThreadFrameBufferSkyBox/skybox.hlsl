@@ -35,8 +35,8 @@ struct PSInput
 
 //Texture2D DiffuseTexture1            : register( t0 );
 //SamplerState LinearRepeatSampler1    : register( s0 );
-Texture2D    gDiffuseMap : register(t0);
-SamplerState gsamLinear  : register(s0);
+TextureCube		gDiffuseMap : register(t0);
+SamplerState	gsamLinear  : register(s0);
 //
 //Texture2D DiffuseTexture2            : register(t1);
 //SamplerState LinearRepeatSampler2    : register(s1);
@@ -56,9 +56,9 @@ PSInput VSMain(VertexInput input)
 
 float4 PSMain(PSInput input) : SV_TARGET0
 {
-	float4 diffuseAlbedo = gDiffuseMap.Sample(gsamLinear, input.uv);
+	float4 diffuseAlbedo = gDiffuseMap.Sample(gsamLinear, input.position);
 	float4 color = float4(1.0f, 1.0f, 0.0f, 1.0f);
-	diffuseAlbedo.a = 0.5f;
+	diffuseAlbedo.a = 1.0f;
 	return diffuseAlbedo;// input.color;
 	//return input.color;
 }

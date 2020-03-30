@@ -58,7 +58,7 @@ float4 PSMain(PSInput input) : SV_TARGET0
 {
 	float4 diffuseAlbedo = gDiffuseMap.Sample(gsamLinear, input.uv);
 	float4 color = float4(1.0f, 1.0f, 0.0f, 1.0f);
-	diffuseAlbedo.a = 0.5f;
+	//diffuseAlbedo.a = 0.5f;
 	return diffuseAlbedo;// input.color;
 	//return input.color;
 }

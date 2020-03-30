@@ -28,6 +28,10 @@ public:
 	// PipelineState
 	ComPtr<ID3D12PipelineState>				mpPipelineState;
 
+	// ConstantBufferView
+	BYTE*									mPCBVDataBegin;
+	ComPtr<ID3D12Resource>					mpConstantBuffer;
+
 	// DescriptorHeap
 	DescriptorHeapObject					mCBVDescriptorHeap;
 	DescriptorHeapObject					mSampleDescriptorHeap;
@@ -65,6 +69,39 @@ public:
 		}
 	};
 
+	void CreateConstantBuffer()
+	{
+		// DescriptorHeap 생성시에 NumDescriptors를 크게 잡아서 하자
+		UINT NumDescriptors = 131072;// 131072, 8192;//1,000,000+(디스크립트 개당 최대?) 디스크립트힙이 가질수 있는 총 디스크립트갯수 { 상수버퍼(CBV) + 이미지(SRV) + 정렬되지않은액세스뷰(UAV) }
+		// CreateDescriptorHeap
+		{
+			// Describe and create a constant buffer view (CBV) descriptor heap.
+			// Flags indicate that this descriptor heap can be bound to the pipeline 
+			// and that descriptors contained in it can be referenced by a root table.
+			/*D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
+			cbvHeapDesc.NumDescriptors = NumDescriptors;
+			cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+			ThrowIfFailed(mpDevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&mpCBVHeap)));*/
+			mCBVDescriptorHeap.Create(mpDevice, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, NumDescriptors, true);
+		}
+
+		// CreateConstantBufferView
+		{
+			UINT mElementByteSize = sizeof(SceneConstantBuffer);
+			// (sizeof(SceneConstantBuffer) + 255) & ~255;    // CB size is required to be 256-byte aligned.
+			mElementByteSize = (sizeof(SceneConstantBuffer) + 255) & ~255;
+
+			ThrowIfFailed(mpDevice->CreateCommittedResource(
+				&CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD),
+				D3D12_HEAP_FLAG_NONE,
+				&CD3DX12_RESOURCE_DESC::Buffer(mElementByteSize * NumDescriptors/*mObj.size()*/),
+				D3D12_RESOURCE_STATE_GENERIC_READ,
+				nullptr,
+				IID_PPV_ARGS(&mpConstantBuffer)));
+		}
+	}
+
 	void InitNormal()
 	{
 		// Shader
@@ -86,6 +123,8 @@ public:
 			{
 			}
 		}
+
+		CreateConstantBuffer();
 
 		// CreateRootSignature
 		{
@@ -225,6 +264,8 @@ public:
 			{
 			}
 		}
+
+		CreateConstantBuffer();
 
 		// CreateRootSignature
 		{
